@@ -1,0 +1,958 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Asymmetric Dyad Simulator</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        /* Notion-style dark neutrals */
+        --bg: #191919;
+        --panel: #202020;
+        --panel-2: #252525;
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.68);
+        --stroke: rgba(255, 255, 255, 0.12);
+        --accent: #66e3ff;
+        --accent-2: #a78bfa;
+        --good: #7cf7a6;
+        --bad: #ff7a90;
+        --shadow: 0 6px 22px rgba(0, 0, 0, 0.35);
+        --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+          monospace;
+        --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
+          "Segoe UI Emoji";
+      }
+      html,
+      body {
+        height: 100%;
+      }
+      body {
+        margin: 0;
+        font-family: var(--sans);
+        background: var(--bg);
+        color: var(--text);
+      }
+      a {
+        color: inherit;
+      }
+      .wrap {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 18px 14px 22px;
+      }
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px 16px;
+      }
+      h1 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: -0.01em;
+      }
+      .sub {
+        margin-top: 6px;
+        color: var(--muted);
+        max-width: 86ch;
+        line-height: 1.45;
+        font-size: 12.5px;
+      }
+      .pillrow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        justify-content: flex-end;
+      }
+      .pill {
+        font-family: var(--mono);
+        font-size: 12px;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: var(--panel);
+        border: 1px solid var(--stroke);
+        color: var(--muted);
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+        margin-top: 16px;
+      }
+      .card {
+        border: 1px solid var(--stroke);
+        background: var(--panel);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .card h2 {
+        margin: 0;
+        padding: 12px 14px 10px;
+        font-size: 13px;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      .card .body {
+        padding: 10px 14px 14px;
+      }
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+      @media (max-width: 980px) {
+        .controls {
+          grid-template-columns: 1fr;
+        }
+      }
+      .group {
+        border: 1px solid var(--stroke);
+        border-radius: 12px;
+        background: var(--panel-2);
+        padding: 10px;
+      }
+      .ghead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 6px;
+      }
+      .gtitle {
+        font-weight: 650;
+        font-size: 13px;
+        letter-spacing: 0.01em;
+      }
+      .gsub {
+        color: var(--muted);
+        font-size: 12px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 1.3fr 1fr;
+        gap: 10px;
+        align-items: center;
+        padding: 6px 0;
+        border-top: 1px solid var(--stroke);
+      }
+      .row:first-of-type {
+        border-top: none;
+      }
+      label {
+        display: grid;
+        gap: 2px;
+      }
+      .lname {
+        font-size: 12.5px;
+        color: var(--text);
+      }
+      .ldesc {
+        display: none;
+      }
+      .inputline {
+        display: grid;
+        grid-template-columns: 1fr 86px;
+        gap: 8px;
+        align-items: center;
+      }
+      input[type="range"] {
+        width: 100%;
+        accent-color: var(--accent);
+      }
+      .val {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: var(--muted);
+        text-align: right;
+        min-width: 44px;
+      }
+      .valinput {
+        width: 100%;
+        padding: 7px 8px;
+        border-radius: 10px;
+        border: 1px solid var(--stroke);
+        background: rgba(0, 0, 0, 0.22);
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 12px;
+        text-align: right;
+        box-sizing: border-box;
+      }
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      input[type="number"] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+      }
+      .btnrow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 8px;
+      }
+      button {
+        cursor: pointer;
+        border-radius: 12px;
+        border: 1px solid var(--stroke);
+        padding: 9px 10px;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        font-weight: 650;
+        letter-spacing: 0.01em;
+      }
+      button.secondary {
+        background: rgba(255, 255, 255, 0.06);
+      }
+      button.ghost {
+        background: transparent;
+      }
+      button:active {
+        transform: translateY(1px);
+      }
+      .toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 10px;
+        border: 1px solid var(--stroke);
+        border-radius: 12px;
+        background: var(--panel);
+        user-select: none;
+      }
+      .toggle input {
+        width: 16px;
+        height: 16px;
+      }
+      .viz {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        min-height: 520px;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        padding: 12px 14px 0;
+      }
+      @media (max-width: 720px) {
+        .stats {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+      .stat {
+        border: 1px solid var(--stroke);
+        background: var(--panel);
+        border-radius: 12px;
+        padding: 10px 12px;
+      }
+      .stat .k {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .stat .v {
+        margin-top: 6px;
+        font-family: var(--mono);
+        font-size: 14px;
+      }
+      .stat .v.good {
+        color: var(--good);
+      }
+      .stat .v.bad {
+        color: var(--bad);
+      }
+      .canvaswrap {
+        padding: 12px 14px 14px;
+      }
+      canvas {
+        width: 100%;
+        height: 320px;
+        display: block;
+        border-radius: 12px;
+        border: 1px solid var(--stroke);
+        background: rgba(0, 0, 0, 0.22);
+      }
+      .footer {
+        padding: 0 14px 14px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+      }
+      .code {
+        font-family: var(--mono);
+      }
+      .tiny {
+        font-size: 11.5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div>
+          <h1>Emotional Dyad Simulator</h1>
+          <div class="sub">
+            Two coupled “affect” states evolve over time with tunable empathy, agency, and memory.
+          </div>
+        </div>
+        <!-- <div class="pillrow" aria-label="Model equations">
+          <div class="pill">E₁(t+1)=β₁E₁(t)+α₁(1−w₁)E₂(t)+w₁B₁+ε₁</div>
+          <div class="pill">E₂(t+1)=β₂E₂(t)+α₂(1−w₂)E₁(t)+w₂B₂+ε₂</div>
+        </div> -->
+      </header>
+
+      <div class="grid">
+        <section class="card" aria-label="Controls">
+          <h2>Controls</h2>
+          <div class="body">
+            <div class="controls">
+              <div class="group">
+                <div class="ghead">
+                  <div>
+                    <div class="gtitle">Agent 1</div>
+                    <div class="gsub">Human / System A</div>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <label for="empathy1">
+                    <div class="lname">Empathy α₁</div>
+                    <div class="ldesc">How strongly Agent 1 mirrors Agent 2</div>
+                  </label>
+                  <div class="inputline">
+                    <input id="empathy1" type="range" min="0" max="1" step="0.01" value="0.50" />
+                    <input id="empathy1_n" class="valinput" type="number" min="0" max="1" step="0.01" value="0.50" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <label for="agency1">
+                    <div class="lname">Agency w₁</div>
+                    <div class="ldesc">Self-regulation; reduces coupling via (1−w₁)</div>
+                  </label>
+                  <div class="inputline">
+                    <input id="agency1" type="range" min="0" max="1" step="0.01" value="0.50" />
+                    <input id="agency1_n" class="valinput" type="number" min="0" max="1" step="0.01" value="0.50" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <label for="beta1">
+                    <div class="lname">Memory β₁</div>
+                    <div class="ldesc">Persistence of Agent 1’s prior state</div>
+                  </label>
+                  <div class="inputline">
+                    <input id="beta1" type="range" min="0" max="0.99" step="0.01" value="0.80" />
+                    <input id="beta1_n" class="valinput" type="number" min="0" max="0.99" step="0.01" value="0.80" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="group">
+                <div class="ghead">
+                  <div>
+                    <div class="gtitle">Agent 2</div>
+                    <div class="gsub">AI / System B</div>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <label for="empathy2">
+                    <div class="lname">Empathy α₂</div>
+                    <div class="ldesc">How strongly Agent 2 mirrors Agent 1</div>
+                  </label>
+                  <div class="inputline">
+                    <input id="empathy2" type="range" min="0" max="1" step="0.01" value="0.50" />
+                    <input id="empathy2_n" class="valinput" type="number" min="0" max="1" step="0.01" value="0.50" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <label for="agency2">
+                    <div class="lname">Agency w₂</div>
+                    <div class="ldesc">Self-regulation; reduces coupling via (1−w₂)</div>
+                  </label>
+                  <div class="inputline">
+                    <input id="agency2" type="range" min="0" max="1" step="0.01" value="0.50" />
+                    <input id="agency2_n" class="valinput" type="number" min="0" max="1" step="0.01" value="0.50" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <label for="beta2">
+                    <div class="lname">Memory β₂</div>
+                    <div class="ldesc">Persistence of Agent 2’s prior state</div>
+                  </label>
+                  <div class="inputline">
+                    <input id="beta2" type="range" min="0" max="0.99" step="0.01" value="0.80" />
+                    <input id="beta2_n" class="valinput" type="number" min="0" max="0.99" step="0.01" value="0.80" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="group">
+                <div class="ghead">
+                  <div>
+                    <div class="gtitle">Simulation</div>
+                    <div class="gsub">Noise and horizon</div>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <label for="noise">
+                    <div class="lname">Noise σ</div>
+                    <div class="ldesc">Random perturbations ε₁, ε₂ ~ N(0, σ)</div>
+                  </label>
+                  <div class="inputline">
+                    <input id="noise" type="range" min="0" max="0.5" step="0.01" value="0.10" />
+                    <input id="noise_n" class="valinput" type="number" min="0" max="0.5" step="0.01" value="0.10" />
+                  </div>
+                </div>
+
+                <div class="row">
+                  <label for="T">
+                    <div class="lname">Steps T</div>
+                    <div class="ldesc">Length of the run</div>
+                  </label>
+                  <div class="inputline">
+                    <input id="T" type="range" min="50" max="1000" step="10" value="200" />
+                    <input id="T_n" class="valinput" type="number" min="50" max="1000" step="10" value="200" />
+                  </div>
+                </div>
+
+                <div class="btnrow">
+                  <button id="run">Run</button>
+                  <button id="modeToggle" class="ghost" aria-pressed="false">Mode: Asymmetric</button>
+                  <button id="randomize" class="secondary">Randomize</button>
+                  <label class="toggle tiny" title="Automatically rerun when sliders change">
+                    <input id="autorun" type="checkbox" checked />
+                    Auto-run
+                  </label>
+                  <button id="download" class="ghost">Download CSV</button>
+                </div>
+
+                <input id="seed" type="hidden" value="0" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card viz" aria-label="Visualization">
+          <h2>Output</h2>
+          <div class="stats" aria-label="Run metrics">
+            <div class="stat">
+              <div class="k">Resonance (corr)</div>
+              <div id="resonance" class="v">—</div>
+            </div>
+            <div class="stat">
+              <div class="k">Coupling k₁₂ = α₁(1−w₁)</div>
+              <div id="k12" class="v">—</div>
+            </div>
+            <div class="stat">
+              <div class="k">Coupling k₂₁ = α₂(1−w₂)</div>
+              <div id="k21" class="v">—</div>
+            </div>
+            <div class="stat">
+              <div class="k">Heuristic stability</div>
+              <div id="stability" class="v">—</div>
+            </div>
+          </div>
+
+          <div class="canvaswrap">
+            <canvas id="plot" width="1200" height="720" aria-label="Time series plot"></canvas>
+          </div>
+
+          <div class="footer">
+            <div>
+              Tip: increase asymmetry (e.g., <span class="code">β₁ ≠ β₂</span> or <span class="code">α₁ ≠ α₂</span>)
+              to see divergence in trajectories.
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      // ---- Model: browser port of the dyad recurrence from `Asymmetric dyad.txt` (with optional baselines B1/B2) ----
+      // E1(t+1) = beta1 * E1(t) + empathy1 * (1 - agency1) * E2(t) + agency1 * B1 + noise1
+      // E2(t+1) = beta2 * E2(t) + empathy2 * (1 - agency2) * E1(t) + agency2 * B2 + noise2
+
+      function mulberry32(seed) {
+        let t = seed >>> 0;
+        return function () {
+          t += 0x6d2b79f5;
+          let x = Math.imul(t ^ (t >>> 15), 1 | t);
+          x ^= x + Math.imul(x ^ (x >>> 7), 61 | x);
+          return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+
+      function randomNormal(rng) {
+        // Box–Muller transform; avoids 0 which would blow up log
+        let u = 0,
+          v = 0;
+        while (u === 0) u = rng();
+        while (v === 0) v = rng();
+        return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+      }
+
+      function simulateDyad(params) {
+        const {
+          T,
+          empathy1,
+          empathy2,
+          agency1,
+          agency2,
+          beta1,
+          beta2,
+          noiseStd,
+          seed,
+        } = params;
+
+        const rng = mulberry32(seed);
+        const E1 = new Array(T).fill(0);
+        const E2 = new Array(T).fill(0);
+
+        E1[0] = randomNormal(rng) * 0.2;
+        E2[0] = randomNormal(rng) * 0.2;
+
+        const k12 = empathy1 * (1 - agency1);
+        const k21 = empathy2 * (1 - agency2);
+
+        for (let t = 0; t < T - 1; t++) {
+          const noise1 = randomNormal(rng) * noiseStd;
+          const noise2 = randomNormal(rng) * noiseStd;
+          // Baselines B1/B2 are 0 in the original notebook snippet; agency just reduces coupling there.
+          E1[t + 1] = beta1 * E1[t] + k12 * E2[t] + noise1;
+          E2[t + 1] = beta2 * E2[t] + k21 * E1[t] + noise2;
+        }
+
+        return { E1, E2, k12, k21 };
+      }
+
+      function pearsonCorr(x, y) {
+        const n = Math.min(x.length, y.length);
+        if (n < 2) return 0;
+        let sx = 0,
+          sy = 0;
+        for (let i = 0; i < n; i++) {
+          sx += x[i];
+          sy += y[i];
+        }
+        const mx = sx / n;
+        const my = sy / n;
+        let sxx = 0,
+          syy = 0,
+          sxy = 0;
+        for (let i = 0; i < n; i++) {
+          const dx = x[i] - mx;
+          const dy = y[i] - my;
+          sxx += dx * dx;
+          syy += dy * dy;
+          sxy += dx * dy;
+        }
+        const denom = Math.sqrt(sxx * syy);
+        if (!isFinite(denom) || denom < 1e-12) return 0;
+        return sxy / denom;
+      }
+
+      function clamp(x, lo, hi) {
+        return Math.max(lo, Math.min(hi, x));
+      }
+
+      function fmt(x, digits = 3) {
+        if (!isFinite(x)) return "—";
+        return x.toFixed(digits);
+      }
+
+      // Heuristic stability: estimate spectral radius of the linear part A = [[β1, k12], [k21, β2]].
+      // If rho(A) < 1, trajectories (without noise) tend to be bounded.
+      function spectralRadius2x2(beta1, beta2, k12, k21) {
+        const tr = beta1 + beta2;
+        const det = beta1 * beta2 - k12 * k21;
+        const disc = tr * tr - 4 * det;
+        const sqrtDisc = Math.sqrt(Math.max(0, disc));
+        const lam1 = 0.5 * (tr + sqrtDisc);
+        const lam2 = 0.5 * (tr - sqrtDisc);
+        return Math.max(Math.abs(lam1), Math.abs(lam2));
+      }
+
+      // ---- Plotting (no external deps) ----
+      function drawTimeSeries(canvas, E1, E2) {
+        const ctx = canvas.getContext("2d");
+        const cssW = canvas.clientWidth;
+        const cssH = canvas.clientHeight;
+        const ratio = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+        const w = Math.floor(cssW * ratio);
+        const h = Math.floor(cssH * ratio);
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width = w;
+          canvas.height = h;
+        }
+
+        const pad = Math.floor(44 * ratio);
+        const innerW = w - pad * 2;
+        const innerH = h - pad * 2;
+
+        let minY = Infinity;
+        let maxY = -Infinity;
+        for (let i = 0; i < E1.length; i++) {
+          const a = E1[i];
+          const b = E2[i];
+          if (a < minY) minY = a;
+          if (a > maxY) maxY = a;
+          if (b < minY) minY = b;
+          if (b > maxY) maxY = b;
+        }
+        if (!isFinite(minY) || !isFinite(maxY)) {
+          minY = -1;
+          maxY = 1;
+        }
+        if (Math.abs(maxY - minY) < 1e-6) {
+          maxY += 1;
+          minY -= 1;
+        }
+        const yPad = 0.08 * (maxY - minY);
+        minY -= yPad;
+        maxY += yPad;
+
+        function xToPx(i) {
+          return pad + (i / (E1.length - 1)) * innerW;
+        }
+        function yToPx(v) {
+          return pad + (1 - (v - minY) / (maxY - minY)) * innerH;
+        }
+
+        // background
+        ctx.clearRect(0, 0, w, h);
+        ctx.save();
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--panel").trim() || "rgba(255,255,255,0.06)";
+        ctx.fillRect(0, 0, w, h);
+        ctx.restore();
+
+        // grid + axes
+        const stroke = getComputedStyle(document.documentElement).getPropertyValue("--stroke").trim() || "rgba(255,255,255,0.18)";
+        const muted = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "rgba(255,255,255,0.72)";
+        ctx.lineWidth = Math.max(1, Math.floor(1 * ratio));
+        ctx.strokeStyle = stroke;
+
+        const gridCountY = 5;
+        ctx.beginPath();
+        for (let j = 0; j <= gridCountY; j++) {
+          const y = pad + (j / gridCountY) * innerH;
+          ctx.moveTo(pad, y);
+          ctx.lineTo(pad + innerW, y);
+        }
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.rect(pad, pad, innerW, innerH);
+        ctx.stroke();
+
+        // labels
+        ctx.fillStyle = muted;
+        ctx.font = `${Math.floor(12 * ratio)}px ${getComputedStyle(document.body).fontFamily}`;
+        ctx.textBaseline = "middle";
+        ctx.textAlign = "left";
+        for (let j = 0; j <= gridCountY; j++) {
+          const t = j / gridCountY;
+          const v = maxY - t * (maxY - minY);
+          const y = pad + t * innerH;
+          ctx.fillText(fmt(v, 2), Math.floor(10 * ratio), y);
+        }
+        ctx.textBaseline = "alphabetic";
+        ctx.textAlign = "left";
+        ctx.fillText("Affect state", Math.floor(10 * ratio), Math.floor(16 * ratio));
+
+        // x-axis ticks + title
+        const gridCountX = 4; // 5 ticks including endpoints
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = Math.max(1, Math.floor(1 * ratio));
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        const tickY0 = pad + innerH;
+        const tickY1 = tickY0 + Math.floor(6 * ratio);
+        const labelY = tickY1 + Math.floor(4 * ratio);
+        const Tsteps = E1.length;
+        for (let i = 0; i <= gridCountX; i++) {
+          const t = i / gridCountX;
+          const x = pad + t * innerW;
+          // Label ticks so the maximum equals the selected Steps T (e.g., T=200 -> max label 200).
+          const tick = Math.round(t * Tsteps);
+
+          // vertical grid line
+          ctx.beginPath();
+          ctx.moveTo(x, pad);
+          ctx.lineTo(x, tickY0);
+          ctx.stroke();
+
+          // tick mark
+          ctx.beginPath();
+          ctx.moveTo(x, tickY0);
+          ctx.lineTo(x, tickY1);
+          ctx.stroke();
+
+          ctx.fillText(String(tick), x, labelY);
+        }
+        ctx.textBaseline = "alphabetic";
+        ctx.fillText("Time (steps)", pad + innerW / 2, h - Math.floor(12 * ratio));
+
+        // series
+        const accent = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#66e3ff";
+        const accent2 = getComputedStyle(document.documentElement).getPropertyValue("--accent-2").trim() || "#a78bfa";
+
+        function drawLine(series, color) {
+          ctx.strokeStyle = color;
+          ctx.lineWidth = Math.max(2, Math.floor(2 * ratio));
+          ctx.beginPath();
+          for (let i = 0; i < series.length; i++) {
+            const x = xToPx(i);
+            const y = yToPx(series[i]);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          ctx.stroke();
+        }
+        drawLine(E1, accent);
+        ctx.globalAlpha = 0.9;
+        drawLine(E2, accent2);
+        ctx.globalAlpha = 1;
+
+        // legend
+        const lx = pad + Math.floor(12 * ratio);
+        const ly = pad + Math.floor(18 * ratio);
+        ctx.font = `${Math.floor(12 * ratio)}px ${getComputedStyle(document.body).fontFamily}`;
+        ctx.fillStyle = muted;
+        ctx.fillText("Agent 1", lx + Math.floor(18 * ratio), ly);
+        ctx.fillText("Agent 2", lx + Math.floor(18 * ratio), ly + Math.floor(18 * ratio));
+        ctx.strokeStyle = accent;
+        ctx.lineWidth = Math.max(3, Math.floor(3 * ratio));
+        ctx.beginPath();
+        ctx.moveTo(lx, ly - Math.floor(4 * ratio));
+        ctx.lineTo(lx + Math.floor(14 * ratio), ly - Math.floor(4 * ratio));
+        ctx.stroke();
+        ctx.strokeStyle = accent2;
+        ctx.beginPath();
+        ctx.moveTo(lx, ly + Math.floor(14 * ratio));
+        ctx.lineTo(lx + Math.floor(14 * ratio), ly + Math.floor(14 * ratio));
+        ctx.stroke();
+      }
+
+      // ---- UI wiring ----
+      const ids = [
+        "empathy1",
+        "agency1",
+        "beta1",
+        "empathy2",
+        "agency2",
+        "beta2",
+        "noise",
+        "T",
+      ];
+
+      function decimalsFromStep(stepStr) {
+        const s = String(stepStr || "");
+        return (s.split(".")[1] || "").length;
+      }
+
+      function normalizeToRange(rangeEl, rawValue) {
+        const min = parseFloat(rangeEl.min);
+        const max = parseFloat(rangeEl.max);
+        const step = parseFloat(rangeEl.step || "1");
+        let v = parseFloat(rawValue);
+        if (!isFinite(v)) v = parseFloat(rangeEl.value);
+        v = clamp(v, min, max);
+        if (isFinite(step) && step > 0) v = Math.round(v / step) * step;
+        const d = decimalsFromStep(rangeEl.step);
+        if (d > 0) v = parseFloat(v.toFixed(d));
+        return v;
+      }
+
+      function getPair(baseId) {
+        const range = document.getElementById(baseId);
+        const number = document.getElementById(baseId + "_n");
+        return { range, number };
+      }
+
+      function setPairValue(baseId, value) {
+        const { range, number } = getPair(baseId);
+        if (!range || !number) return;
+        const v = normalizeToRange(range, value);
+        range.value = String(v);
+        number.value = String(v);
+      }
+
+      function linkRangeAndNumber(baseId) {
+        const { range, number } = getPair(baseId);
+        if (!range || !number) return;
+
+        number.value = range.value;
+
+        range.addEventListener("input", () => {
+          number.value = range.value;
+          maybeAutoRun();
+        });
+
+        number.addEventListener("change", () => {
+          setPairValue(baseId, number.value);
+          maybeAutoRun();
+        });
+        number.addEventListener("blur", () => {
+          setPairValue(baseId, number.value);
+        });
+      }
+
+      for (const id of ids) linkRangeAndNumber(id);
+
+      const elResonance = document.getElementById("resonance");
+      const elK12 = document.getElementById("k12");
+      const elK21 = document.getElementById("k21");
+      const elStability = document.getElementById("stability");
+      const canvas = document.getElementById("plot");
+      const modeToggle = document.getElementById("modeToggle");
+
+      let mode = "asymmetric"; // or "symmetric"
+
+      function setAgent2Enabled(enabled) {
+        for (const id of ["empathy2", "agency2", "beta2"]) {
+          const { range, number } = getPair(id);
+          if (range) range.disabled = !enabled;
+          if (number) number.disabled = !enabled;
+        }
+      }
+
+      function mirrorAgent2FromAgent1() {
+        setPairValue("empathy2", document.getElementById("empathy1").value);
+        setPairValue("agency2", document.getElementById("agency1").value);
+        setPairValue("beta2", document.getElementById("beta1").value);
+      }
+
+      function setMode(nextMode) {
+        mode = nextMode;
+        const isSym = mode === "symmetric";
+        modeToggle.textContent = isSym ? "Mode: Symmetric" : "Mode: Asymmetric";
+        modeToggle.setAttribute("aria-pressed", isSym ? "true" : "false");
+
+        setAgent2Enabled(!isSym);
+        if (isSym) mirrorAgent2FromAgent1();
+        run();
+      }
+
+      function readParams() {
+        const empathy1 = parseFloat(document.getElementById("empathy1").value);
+        const agency1 = parseFloat(document.getElementById("agency1").value);
+        const beta1 = parseFloat(document.getElementById("beta1").value);
+        let empathy2 = parseFloat(document.getElementById("empathy2").value);
+        let agency2 = parseFloat(document.getElementById("agency2").value);
+        let beta2 = parseFloat(document.getElementById("beta2").value);
+
+        if (mode === "symmetric") {
+          empathy2 = empathy1;
+          agency2 = agency1;
+          beta2 = beta1;
+        }
+        const noiseStd = parseFloat(document.getElementById("noise").value);
+        let T = parseInt(document.getElementById("T").value, 10);
+        if (!isFinite(T)) T = 200;
+        T = clamp(T, 50, 1000);
+        const seed = parseInt(document.getElementById("seed").value, 10) >>> 0;
+        return { T, empathy1, empathy2, agency1, agency2, beta1, beta2, noiseStd, seed, mode };
+      }
+
+      function setMetric(el, text, cls) {
+        el.classList.remove("good", "bad");
+        if (cls) el.classList.add(cls);
+        el.textContent = text;
+      }
+
+      let lastRun = null;
+      function run() {
+        const params = readParams();
+        const { E1, E2, k12, k21 } = simulateDyad(params);
+        const r = pearsonCorr(E1, E2);
+        const rho = spectralRadius2x2(params.beta1, params.beta2, k12, k21);
+
+        lastRun = { params, E1, E2 };
+
+        setMetric(elResonance, fmt(r, 3), r >= 0.55 ? "good" : r <= -0.55 ? "bad" : "");
+        setMetric(elK12, fmt(k12, 3));
+        setMetric(elK21, fmt(k21, 3));
+        setMetric(
+          elStability,
+          `ρ≈${fmt(rho, 3)} (${rho < 1 ? "bounded" : "diverging"})`,
+          rho < 1 ? "good" : "bad"
+        );
+
+        drawTimeSeries(canvas, E1, E2);
+      }
+
+      function maybeAutoRun() {
+        const autorun = document.getElementById("autorun").checked;
+        if (!autorun) return;
+        // Debounce: avoid running dozens of times during drag
+        window.clearTimeout(maybeAutoRun._t);
+        maybeAutoRun._t = window.setTimeout(run, 40);
+      }
+
+      document.getElementById("run").addEventListener("click", run);
+      modeToggle.addEventListener("click", () => {
+        setMode(mode === "asymmetric" ? "symmetric" : "asymmetric");
+      });
+      document.getElementById("randomize").addEventListener("click", () => {
+        const newSeed = Math.floor(Math.random() * 10000);
+        document.getElementById("seed").value = String(newSeed);
+        run();
+      });
+
+      document.getElementById("download").addEventListener("click", () => {
+        if (!lastRun) run();
+        const { params, E1, E2 } = lastRun;
+        const header = [
+          "# Asymmetric Dyad Simulator CSV",
+          `# empathy1=${params.empathy1}, agency1=${params.agency1}, beta1=${params.beta1}`,
+          `# empathy2=${params.empathy2}, agency2=${params.agency2}, beta2=${params.beta2}`,
+          `# noiseStd=${params.noiseStd}, T=${params.T}, seed=${params.seed}`,
+        ].join("\n");
+        let csv = header + "\n\n" + "t,E1,E2\n";
+        for (let t = 0; t < E1.length; t++) csv += `${t},${E1[t]},${E2[t]}\n`;
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "asymmetric_dyad_timeseries.csv";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      });
+
+      // Rerender on resize (keeps canvas crisp)
+      window.addEventListener("resize", () => {
+        if (lastRun) drawTimeSeries(canvas, lastRun.E1, lastRun.E2);
+      });
+
+      // Keep Agent 2 mirrored in symmetric mode (for both range and number edits).
+      for (const id of ["empathy1", "agency1", "beta1"]) {
+        const { range, number } = getPair(id);
+        const handler = () => {
+          if (mode !== "symmetric") return;
+          mirrorAgent2FromAgent1();
+          maybeAutoRun();
+        };
+        if (range) range.addEventListener("input", handler);
+        if (number) number.addEventListener("change", handler);
+      }
+
+      setMode("asymmetric");
+    </script>
+  </body>
+</html>
